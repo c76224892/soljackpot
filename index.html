@@ -3,23 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Sol Jackpot</title>
+    <title>Solana Jackpot</title>
     <style>
         body {
             font-family: 'Courier New', monospace;
             background-color: #000;
             color: #0f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
             text-align: center;
-            padding: 20px;
         }
 
         h1 {
             font-size: 2.5em;
+            animation: flicker 2s infinite;
         }
 
-        #wallet-container, #jackpot-container {
-            margin: 20px auto;
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+            70% { opacity: 0.5; }
+        }
+
+        #wallet-container, #game-container {
+            margin: 20px;
             max-width: 600px;
+            text-align: center;
         }
 
         input {
@@ -51,66 +64,119 @@
             font-size: 1.5em;
             white-space: pre;
             line-height: 1.5;
-        }
-
-        .jackpot-number {
-            font-size: 1.8em;
-            margin-top: 20px;
-            color: #0ff;
-        }
-
-        .ascii-animation {
             animation: glow 1.5s infinite;
         }
 
         @keyframes glow {
-            0%, 100% {
-                color: #0f0;
-            }
-            50% {
-                color: #0a0;
-            }
+            0%, 100% { color: #0f0; }
+            50% { color: #0a0; }
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .grid-item {
+            background-color: #222;
+            color: #0f0;
+            padding: 20px;
+            border: 1px solid #0f0;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .grid-item:hover {
+            background-color: #0a0;
+        }
+
+        #sequence-display {
+            font-size: 1.8em;
+            margin: 20px 0;
+            animation: flicker 2s infinite;
+        }
+
+        #result-message {
+            font-size: 1.8em;
+            color: #0ff;
+            margin-top: 20px;
+            display: none;
+            animation: flicker 2s infinite;
         }
     </style>
 </head>
 <body>
     <div id="wallet-container">
-        <h1>The Sol Jackpot</h1>
-        <p class="ascii-text">Enter your wallet to reveal your number:</p>
+        <h1>Enter the Solana Jackpot</h1>
+        <p class="ascii-text">Submit your wallet to join the exclusive jackpot!</p>
+        <p class="ascii-text">Every 10 minutes, 0.1 Solana will be given away!</p>
         <input type="text" id="wallet" placeholder="Enter your Solana wallet address">
-        <button onclick="addWallet()">Reveal Number</button>
+        <button onclick="submitWallet()">Join Jackpot</button>
     </div>
 
-    <div id="jackpot-container" style="display: none;">
-        <h1>Your Jackpot Number</h1>
-        <p class="ascii-text ascii-animation">
-            <code>
-███████╗ ██████╗ ██╗      
-██╔════╝██╔═══██╗██║      
-█████╗  ██║   ██║██║      
-██╔══╝  ██║   ██║██║      
-███████╗╚██████╔╝███████╗ 
-╚══════╝ ╚═════╝ ╚══════╝ 
-            </code>
-        </p>
-        <div class="jackpot-number" id="jackpot-number">...</div>
+    <div id="game-container" style="display: none;">
+        <h1>Crack the Code</h1>
+        <p>Crack the sequence to reveal your exclusive number.</p>
+        <div id="sequence-display"></div>
+        <div class="game-grid" id="game-grid"></div>
     </div>
+
+    <p id="result-message"></p>
 
     <script>
-        function addWallet() {
+        let jackpotNumber = Math.floor(Math.random() * 50) + 1;
+        let gameSequence = [];
+        let userSequence = [];
+
+        function submitWallet() {
             const wallet = document.getElementById('wallet').value;
             const walletContainer = document.getElementById('wallet-container');
-            const jackpotContainer = document.getElementById('jackpot-container');
-            const jackpotNumberElement = document.getElementById('jackpot-number');
+            const gameContainer = document.getElementById('game-container');
+            const sequenceDisplay = document.getElementById('sequence-display');
 
-            // Simple validation for Solana wallet address
             if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)) {
                 walletContainer.style.display = 'none';
-                jackpotContainer.style.display = 'block';
-                const randomNumber = Math.floor(Math.random() * 50) + 1; // Random number between 1 and 50
-                jackpotNumberElement.textContent = `Your Number: ${randomNumber}`;
+                gameContainer.style.display = 'block';
+
+                // Generate and display the sequence to memorize
+                gameSequence = Array.from({ length: 3 }, () => Math.floor(Math.random() * 9));
+                sequenceDisplay.textContent = `Memorize this sequence: ${gameSequence.map(n => n + 1).join(', ')}`;
+                initializeGame();
             } else {
                 alert('Please enter a valid Solana wallet address.');
+            }
+        }
+
+        function initializeGame() {
+            const gameGrid = document.getElementById('game-grid');
+            gameGrid.innerHTML = '';
+            userSequence = [];
+
+            for (let i = 0; i < 9; i++) {
+                const gridItem = document.createElement('div');
+                gridItem.textContent = i + 1;
+                gridItem.className = 'grid-item';
+                gridItem.onclick = () => handleUserClick(i);
+                gameGrid.appendChild(gridItem);
+            }
+        }
+
+        function handleUserClick(index) {
+            userSequence.push(index);
+
+            if (userSequence.length === gameSequence.length) {
+                if (userSequence.join() === gameSequence.join()) {
+                    document.getElementById('game-container').style.display = 'none';
+                    const resultMessage = document.getElementById('result-message');
+                    resultMessage.textContent = `Congratulations! Your jackpot number is: ${jackpotNumber}`;
+                    resultMessage.style.display = 'block';
+                } else {
+                    alert('Incorrect sequence. Try again!');
+                    initializeGame();
+                }
             }
         }
     </script>
